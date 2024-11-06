@@ -87,7 +87,10 @@ TITLE PROJETO-FINAL
         VerificaHorizontal:
             MOV CX, BX                 ; Tamanho da embarcação em CX (número de células)
             ; Lógica para verificar e alocar células na horizontal
-
+            VerificarLinha:
+                PUSH AX
+                MOV AX, SI
+                PUSH SI
             JMP BuscarPosicao       ; Se falhar, tenta nova posição
 
         VerificaVertical:
