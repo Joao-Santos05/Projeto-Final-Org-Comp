@@ -4,10 +4,21 @@ TITLE ProjetoFinal
 .DATA
 
     Matriz_Escolhida DW 0 ;-Armazena o offset da matriz escolhida-;
-    ReadLineMessage DB "Write the number of the line you want to attack(0-9): $"
-    ReadCollumMessage DB "Write the number of the collum you want to attack(0-9): $"
+    ReadLineMessage DB "Write the number of the line you want to attack(1-10): $"
+    ReadCollumMessage DB "Write the number of the collum you want to attack(1-10): $"
     HitMessage DB "Hit! $"
     MissMessage DB "Miss! $"
+
+    GamepadBase DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
+                DB 0,0,0,0,0,0,0,0,0,0
 
     GamepadA DB 0,0,0,1,1,1,0,0,0,0
              DB 0,1,0,0,0,0,0,0,0,0
@@ -93,6 +104,31 @@ TITLE ProjetoFinal
         POP DX
         POP AX
     ENDM
+
+    EntDec MACRO
+        ;Retorna o número lido em BL
+        PUSH AX
+        PUSH CX
+
+        XOR BX, BX
+        XOR CX, CX
+        LoopScan:
+            MOV AH, 1
+            INT 21h
+            CMP AL, 0Dh
+            JE FimScan
+            MOV CL, AL
+            AND CL, 0Fh
+            MOV AX, 10
+            MUL BX
+            MOV BL, AL
+            ADD BL, CL
+            JMP LoopScan
+        FimScan:
+
+        POP CX
+        POP AX
+    ENDM
 .CODE ;-Inicia a Sessão Code-;
 
     MAIN PROC ;-Inicia a Sessão Main-;
@@ -107,8 +143,10 @@ TITLE ProjetoFinal
         ;----------------------------;
         ;-PARTE GRÁFICA DO BIG PETER-;
         ;----------------------------;
-
-        ; Procedimento de leitura da jogada do usuário
+        ; Procedimento para imprimir a gamepad base
+        CALL PrintGampad
+        
+        ; Procedimento de leitura da jogada do usuário e atualização da gamepad base
             CALL READ_ATTACK
         
         ;-Fim de Código-;
@@ -173,27 +211,53 @@ TITLE ProjetoFinal
     ;----------------------------;
     ;-PARTE GRÁFICA DO BIG PETER-;
     ;----------------------------;
+    ;description
+    PrintGampad PROC
+        
+        PUSH SI
+        PUSH_ALL AX, BX, CX, DX
+
+        MOV AH, 2
+        XOR CX, CX
+        MOV CL, 10
+        MOV CH, 10
+        XOR BX, BX
+        Loop_linha:
+            XOR SI, SI
+            Loop_coluna:
+                MOV DL, GamepadBase[BX][SI]
+                INT 21h
+                Space
+                INC SI
+                DEC CL
+                JNZ Loop_coluna
+            ADD BX, 10
+            DEC CH
+            JNZ Loop_linha
+
+        POP_ALL AX, BX, CX, DX
+        POP SI
+
+        RET
+    PrintGampad ENDP
 
     ;-Leitura Da Jogada-;
     READ_ATTACK PROC
 
+        PUSH SI
+        PUSH DI
         PUSH_ALL AX, BX, CX, DX         ; Salva todos os registradores na pilha
 
         MOV AH, 9                       ; Função de impressão de string
         LEA ReadLineMessage, DX         ; Carrega o OFFSET da string em DX
         INT 21h                         ; Executa a função e imprime a string com OFFSET salvo em DX
-        MOV AH, 1                       ; Função de leitura de caractere
-        INT 21h                         ; Executa a leitura e salva em AL
-        MOV SI, AL                      ; Salva a linha a ser manipulada em SI
-        AND SI, 0Fh                     ; Converte o valor do caractere recebido para um número por meio da Função Lógica AND
+        EntDec                          ; MACRO para entrada de número decimal
+        MOV SI, BL                      ; Salva a linha a ser manipulada em SI
         PulaLinha                       ; Macro para pular linha
-        MOV AH, 9                       ; Função de impressão de string
         LEA ReadCollumMessage           ; Carrega o OFFSET da string em DX
         INT 21h                         ; Executa a impressão da string com OFFSER salvo em DX
-        MOV AH, 1                       ; Função de leitura
-        INT 21h                         ; Executa a leitura
-        MOV DI, AL                      ; Salva a coluna a ser manipulada em DI
-        AND DI, 0Fh                     ; Converte o valor do caractere recebido para um número por meio da Função Lógica AND
+        EntDec                          ; MACRO para entrada de número decimal
+        MOV DI, BL                      ; Salva a coluna a ser manipulada em DI
 
         MOV AX, 10                      ; Salva o multiplicador em AX
         MUL SI                          ; AX*SI = DX:AX
@@ -205,18 +269,20 @@ TITLE ProjetoFinal
         MOV AH, 9                       ; Função de impressão de string
         LEA DX, HitMessage              ; Salva o OFFSET da string em DX
         INT 21h                         ; Executa a impressão
-        MOV [BX][SI][DI], 'X'           ; Muda a posição acertada para X
+        MOV GamepadBase[SI][DI], 'X'           ; Muda a posição acertada para X
         PulaLinha                       ; Macro para pular linha
         JMP EndProc                     ; Pula para o final do procedimento
         ERRO:
-            PulaLinha                   ; Macro para pular linha
-            MOV AH, 9                   ; Função de impressão de string
-            LEA DX, MissMessage         ; Carrega o OFFSET da string em DX
-            INT 21h                     ; Executa a impressão
-            MOV [BX][SI][DI], ' '       ; Muda a posição errada para spacebar
-            PulaLinha                   ; Macro para pular linha
+            PulaLinha                       ; Macro para pular linha
+            MOV AH, 9                       ; Função de impressão de string
+            LEA DX, MissMessage             ; Carrega o OFFSET da string em DX
+            INT 21h                         ; Executa a impressão
+            MOV GamepadBase[SI][DI], ' '    ; Muda a posição errada para spacebar
+            PulaLinha                       ; Macro para pular linha
 
         POP_ALL AX, BX, CX, DX          ; Devolve os valores dos registradores na pilha
+        POP DI
+        POP SI
 
         RET                             ; Carrega o offset de retorno ao MAIN (que foi guardada na pilha)
     
