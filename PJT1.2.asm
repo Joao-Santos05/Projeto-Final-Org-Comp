@@ -2,12 +2,32 @@ TITLE ProjetoFinal
 .MODEL MEDIUM
 .STACK 100h
 .DATA
+  ; Introdução:
+  INTRO_TITLE DB 'BATTLESHIP | OSC 2S24', '$' ; Criação/definição da variável "INTRO_TITLE" que contém o título da introdução.	
+
+  ; Regras/Instruções:
+    RULES_TITLE DB 'RULES/INSTRUCTIONS:', '$' ; Criação/definição da variável "RULES_TITLE" que contém o título das regras/instruções.
+    FIRST_RULE DB '> The game has to be played by 2 players.', '$' ; Criação/definição da variável "FIRST_RULE" que contém a primeira regra.
+    SECOND_RULE DB '> Each player has to set a position to their ships, which are:', '$' ; Criação/definição da variável "SECOND_RULE" que contém a segunda regra.
+    THIRD_RULE DB '   * Battleship - 4 position length/size', '$' ; Criação/definição da variável "THIRD_RULE" que contém a terceira regra.
+    FOURTH_RULE DB '   * Frigate - 3 position length/size', '$' ; Criação/definição da variável "FOURTH_RULE" que contém a quarta regra.
+    FIFTH_RULE DB '   * Submarine - 2 position lenght/size', '$' ; Criação/definição da variável "FIFTH_RULE" que contém a quinta regra.
+    SIXTH_RULE DB '   * Hydroplane - 4 position lenght/size ("T" format/shape)', '$' ; Criação/definição da variável "SIXTH_RULE" que contém a sexta regra.
+    SEVENTH_RULE DB '> Vessels/ships cannot be docked:', '$'  ; Criação/definição da variável "SEVENTH_RULE" que contém a sétima regra.
+    EIGHTH_RULE DB '   * There must be a minimum distance of 1 square on every direction.', '$'  ; Criação/definição da variável "EIGHTH_RULE" que contém a oitava regra.
+    NINTH_RULE DB '> Both players have 35 attempts to sink the ships.', '$'  ; Criação/definição da variável "NINTH_RULE" que contém a nona regra.
+    TENTH_RULE DB '> The game ends when the winner hits all enemy ships.', '$'  ; Criação/definição da variável "TENTH_RULE" que contém a décima regra.
+
+    CONFIRM_MESSAGE DB 'PRESS ANY BUTTON TO CONTINUE', '$' ; Criação/definição da variável "CONFIRM_MESSAGE" que contém a confirmação de leitura.
+
 
     Matriz_Escolhida DW 0 ;-Armazena o offset da matriz escolhida-;
     ReadLineMessage DB "Write the number of the line you want to attack(1-10): $"
     ReadCollumMessage DB "Write the number of the collum you want to attack(1-10): $"
     HitMessage DB "Hit! $"
     MissMessage DB "Miss! $"
+
+
 
     GamepadBase DB 0,0,0,0,0,0,0,0,0,0
                 DB 0,0,0,0,0,0,0,0,0,0
@@ -91,18 +111,57 @@ TITLE ProjetoFinal
     ENDM 
 
     ; Macro para imprimir a quebra de linha
-    PulaLinha MACRO
-        PUSH AX
-        PUSH DX
+    PulaLinha MACRO PARAM ; Criação de MACRO para quebra/inicialização de nova linha.
+        LOCAL REPEAT
 
-        MOV AH, 2
-        MOV DX, 0Ah
-        INT 21h
-        MOV DX, 0Dh
-        INT 21h
+        PUSH AX ; Salva o valor de AX na pilha.
+        PUSH CX ; Salva o valor de CX na pilha.
+        PUSH DX ; Salva o valor de DX na pilha.
 
-        POP DX
-        POP AX
+        MOV CX,PARAM ; Movimentação/cópia do valor de PARAM (parâmetro) para CX.
+        MOV AH,2 ; Função responsável por imprimir um caractere na tela do usuário.
+
+        REPEAT:
+            MOV DL,10 ; Movimentação/cópia do valor 10 para DL (quebra de linha).
+            INT 21H ; Conjunto de funções de entrada/saída.
+
+            MOV DL,13 ; Movimentação/cópia do valor 13 para DL (retorno de carro).
+            INT 21H ; Conjunto de funções de entrada/saída.
+
+        LOOP REPEAT ; Loop de repetição.
+
+        POP DX ; Restaura o valor de DX da pilha.
+        POP CX ; Restaura o valor de CX da pilha.
+        POP AX ; Restaura o valor de AX da pilha.
+    ENDM ; Fim da MACRO.
+
+    LEFT_TAB MACRO PARAM ; Criação de MACRO para impressão da tabulação das strings definidas no segmento de dados.
+    PUSH AX ; Salva o valor de AX na pilha.
+    PUSH BX ; Salva o valor de BX na pilha.
+    PUSH CX ; Salva o valor de CX na pilha.
+    PUSH DX ; Salva o valor de DX na pilha.
+            
+    MOV AH,3 ; Função responsável por obter a posição do cursor.
+    MOV BH,0 ; Movimentação/cópia do valor 0 para BH. 
+    INT 10H ; Conjunto de funções de vídeo.
+            
+    MOV AH,2 ; Função responsável por posicionar o cursor na tela.
+    ADD DL,PARAM ; Movimentação/cópia do valor de PARAM (parâmetro) para DL.
+    INT 10H ; Conjunto de funções de vídeo.
+            
+    POP DX ; Restaura o valor de DX da pilha.
+    POP CX ; Restaura o valor de CX da pilha.
+    POP BX ; Restaura o valor de BX da pilha.
+    POP AX ; Restaura o valor de AX da pilha.
+    ENDM ; Fim da MACRO.
+
+    READ_CONFIRMATION MACRO ; Criação de MACRO para realizar a confirmação da leitura das instruções pelo jogador.
+    MOV AH,9 ; Função responsável por imprimir uma string na tela.
+    LEA DX,CONFIRM_MESSAGE ; Carregamento do endereço da variável "CONFIRM_MESSAGE" em SI.
+    INT 21H ; Conjunto de funções de entrada/saída.
+
+    MOV AH,1 ; Função responsável por ler um caractere do teclado.
+    INT 21H ; Conjunto de funções de entrada/saída.
     ENDM
 
     SPACE MACRO
@@ -110,7 +169,7 @@ TITLE ProjetoFinal
         PUSH DX
 
         MOV AH, 2
-        MOV DL, 20h
+        MOV DX, 20h
         INT 21h
 
         POP DX
@@ -158,7 +217,14 @@ TITLE ProjetoFinal
         ;----------------------------;
         ;-PARTE GRÁFICA DO BIG PETER-;
         ;----------------------------;
+        CALL CLEAR_SCREEN
 
+        CALL INTRODUCTION_SCREEN
+
+        READ_CONFIRMATION
+
+        CALL CLEAR_SCREEN
+        
         ; Procedimento para imprimir a gamepad base
         CALL PrintGamepad
         
@@ -229,11 +295,102 @@ TITLE ProjetoFinal
     ;----------------------------;
     ;-PARTE GRÁFICA DO BIG PETER-;
     ;----------------------------;
-    ;description
+
+    INTRODUCTION_SCREEN PROC NEAR; Criação/definição do procedimento "INTRODUCTION_SCREEN" para exibição da tela de introdução.
+        MOV AH,9 ; Função responsável por imprimir uma string na tela.
+
+        PulaLinha 2 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 25 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,INTRO_TITLE ; Carregamento do endereço da variável "INTRO_TITLE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 3 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,RULES_TITLE ; Carregamento do endereço da variável "RULES_TITLE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 2 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,FIRST_RULE ; Carregamento do endereço da variável "FIRST_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,SECOND_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,THIRD_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,FOURTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,FIFTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,SIXTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,SEVENTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,EIGHTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,NINTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,TENTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 4 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 23 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        RET ; Retorno do procedimento.
+    INTRODUCTION_SCREEN ENDP ; Fim do procedimento "INTRODUCTION_SCREEN".
+
+    CLEAR_SCREEN PROC NEAR ; Criação/definição do procedimento "CLEAR_SCREEN" para limpeza da tela.
+        MOV AX,03H ; Movimentação/cópia do valor 3 para AX (limpeza da tela).
+        INT 10H ; Conjunto de funções de vídeo.
+
+        RET ; Retorno do procedimento.
+    CLEAR_SCREEN ENDP ; Fim do procedimento "CLEAR_SCREEN".
+
+    ; Proc para printar a tabela para o usuário
     PrintGamepad PROC NEAR
         
         PUSH SI
         PUSH_ALL AX, BX, CX, DX
+
+        ;FAZER SAIDEC PARA IMPRESSÃO DO INDICE
 
         MOV AH, 2
         XOR CX, CX
@@ -244,16 +401,23 @@ TITLE ProjetoFinal
             MOV CL, 10
             Loop_coluna:
                 MOV DL, GamepadBase[BX][SI]
-                INT 21h
-                Space
-                INC SI
-                DEC CL
-                JNZ Loop_coluna
-            PulaLinha
+                CMP DL, 20h
+                JE NotNumber
+                CMP DL, 'X'
+                JE NotNumber
+                OR DL, 30h
+                NotNumber:
+                    INT 21h
+                    SPACE
+                    INC SI
+                    DEC CL
+                    JNZ Loop_coluna
+            PulaLinha 1
             ADD BX, 10
             DEC CH
             JNZ Loop_linha
 
+        PulaLinha 2
         POP_ALL AX, BX, CX, DX
         POP SI
 
@@ -273,8 +437,8 @@ TITLE ProjetoFinal
         EntDec                          ; MACRO para entrada de número decimal
         MOV SI, BX                      ; Salva a linha a ser manipulada em SI
         DEC SI                          ; De 1-10 para 0-9
-        PulaLinha                       ; Macro para pular linha
-        LEA DX, ReadCollumMessage           ; Carrega o OFFSET da string em DX
+        PulaLinha 1                     ; Macro para pular linha
+        LEA DX, ReadCollumMessage       ; Carrega o OFFSET da string em DX
         INT 21h                         ; Executa a impressão da string com OFFSER salvo em DX
         EntDec                          ; MACRO para entrada de número decimal
         MOV DI, BX                      ; Salva a coluna a ser manipulada em DI
@@ -285,26 +449,26 @@ TITLE ProjetoFinal
         MOV SI, AX                      ; Passa resultado para SI
         MOV BX, [Matriz_Escolhida]      ; Salva o OFFSET da matriz escolhida em BX
         ADD BX, SI                      ; OFFSET + Pos LInha = Pos Linha Real
-        CMP [BX][DI], 0                 ; Compara o conteúdo da posição escolhida com 0
+        CMP BYTE PTR [BX][DI], 0        ; Compara o conteúdo da posição escolhida com 0
         JE Erro                         ; Se Local escolhido for 0, usuário errou o tiro
-        PulaLinha                       ; Se não, executa rotina de Impressão de acerto
+        PulaLinha 1                     ; Se não, executa rotina de Impressão de acerto
         MOV AH, 9                       ; Função de impressão de string
         LEA DX, HitMessage              ; Salva o OFFSET da string em DX
         INT 21h                         ; Executa a impressão
         XCHG BX, SI                     ; Pos linha -> BX e salva conteúdo de BX em SI
         MOV GamepadBase[BX][DI], 'X'    ; Muda a posição acertada para X
         XCHG BX, SI                     ; Retorna os Conteúdos aos registradores de origem
-        PulaLinha                       ; Macro para pular linha
+        PulaLinha 2                     ; Macro para pular linha
         JMP EndProc                     ; Pula para o final do procedimento
         ERRO:
-            PulaLinha                       ; Macro para pular linha
+            PulaLinha 1                     ; Macro para pular linha
             MOV AH, 9                       ; Função de impressão de string
             LEA DX, MissMessage             ; Carrega o OFFSET da string em DX
             INT 21h                         ; Executa a impressão
             XCHG BX, SI                     ; Pos linha -> BX e salva conteúdo de BX em SI
             MOV GamepadBase[BX][DI], ' '    ; Muda a posição errada para spacebar
             XCHG BX, SI                     ; Retorna os Conteúdos aos registradores de origem
-            PulaLinha                       ; Macro para pular linha
+            PulaLinha 2                     ; Macro para pular linha
         EndProc:
             POP_ALL AX, BX, CX, DX          ; Devolve os valores dos registradores na pilha
             POP DI
