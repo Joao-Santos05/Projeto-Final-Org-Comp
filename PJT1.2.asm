@@ -105,7 +105,22 @@ TITLE ProjetoFinal
         POP AX
     ENDM
 
+    SPACE MACRO
+        PUSH AX
+        PUSH DX
+
+        MOV AH, 2
+        MOV DL, 20h
+        INT 21h
+
+        POP DX
+        POP AX
+    ENDM
+
     EntDec MACRO
+        LOCAL LoopScan
+        LOCAL FimScan
+        
         ;Retorna o número lido em BL
         PUSH AX
         PUSH CX
@@ -134,29 +149,32 @@ TITLE ProjetoFinal
     MAIN PROC ;-Inicia a Sessão Main-;
         
         ;-Sessão Básica do Código-;
-            MOV AX, @DATA ;-Conteúdo de DATA é direcionado para o registrador AX, gerando acesso ao conteúdo de DATA pelo programa-;
-            MOV DS, AX ;-Endereço de AX é direcionado para o registrador DS-;
+        MOV AX, @DATA ;-Conteúdo de DATA é direcionado para o registrador AX, gerando acesso ao conteúdo de DATA pelo programa-;
+        MOV DS, AX ;-Endereço de AX é direcionado para o registrador DS-;
 
         ; Procedimento para escolher gamepad aleatório
-            CALL EscolherGamepadAleatorio ;Retorna para o OFFSET do gamepad escolhido para a variavel 'Matriz_Escolhida'
+        CALL EscolherGamepadAleatorio ;Retorna para o OFFSET do gamepad escolhido para a variavel 'Matriz_Escolhida'
             
         ;----------------------------;
         ;-PARTE GRÁFICA DO BIG PETER-;
         ;----------------------------;
+
         ; Procedimento para imprimir a gamepad base
-        CALL PrintGampad
+        CALL PrintGamepad
         
         ; Procedimento de leitura da jogada do usuário e atualização da gamepad base
-            CALL READ_ATTACK
-        
+        CALL READ_ATTACK
+
+        CALL PrintGamepad
+    
         ;-Fim de Código-;
-            MOV AH, 4Ch ;-Aloca o valor '4ch' (função de terminação de programa) para AH, que é parte de AX-;
-            INT 21h ;-Chama a função do DOS que usa o valor de AH para determinar qual operação realizar-;
+        MOV AH, 4Ch ;-Aloca o valor '4ch' (função de terminação de programa) para AH, que é parte de AX-;
+        INT 21h ;-Chama a função do DOS que usa o valor de AH para determinar qual operação realizar-;
 
     MAIN ENDP ;-Finaliza a sessão MAIN-;
 
     ; Procedimento de geração de coordenadas aleatórias
-    EscolherGamepadAleatorio PROC
+    EscolherGamepadAleatorio PROC NEAR
         
         PUSH_ALL AX, BX, CX, DX         ; Push dos resgistradores utilizados
 
@@ -212,18 +230,18 @@ TITLE ProjetoFinal
     ;-PARTE GRÁFICA DO BIG PETER-;
     ;----------------------------;
     ;description
-    PrintGampad PROC
+    PrintGamepad PROC NEAR
         
         PUSH SI
         PUSH_ALL AX, BX, CX, DX
 
         MOV AH, 2
         XOR CX, CX
-        MOV CL, 10
         MOV CH, 10
         XOR BX, BX
         Loop_linha:
             XOR SI, SI
+            MOV CL, 10
             Loop_coluna:
                 MOV DL, GamepadBase[BX][SI]
                 INT 21h
@@ -231,6 +249,7 @@ TITLE ProjetoFinal
                 INC SI
                 DEC CL
                 JNZ Loop_coluna
+            PulaLinha
             ADD BX, 10
             DEC CH
             JNZ Loop_linha
@@ -239,37 +258,42 @@ TITLE ProjetoFinal
         POP SI
 
         RET
-    PrintGampad ENDP
+    PrintGamepad ENDP
 
     ;-Leitura Da Jogada-;
-    READ_ATTACK PROC
+    READ_ATTACK PROC NEAR
 
         PUSH SI
         PUSH DI
         PUSH_ALL AX, BX, CX, DX         ; Salva todos os registradores na pilha
 
         MOV AH, 9                       ; Função de impressão de string
-        LEA ReadLineMessage, DX         ; Carrega o OFFSET da string em DX
+        LEA DX, ReadLineMessage         ; Carrega o OFFSET da string em DX
         INT 21h                         ; Executa a função e imprime a string com OFFSET salvo em DX
         EntDec                          ; MACRO para entrada de número decimal
-        MOV SI, BL                      ; Salva a linha a ser manipulada em SI
+        MOV SI, BX                      ; Salva a linha a ser manipulada em SI
+        DEC SI                          ; De 1-10 para 0-9
         PulaLinha                       ; Macro para pular linha
-        LEA ReadCollumMessage           ; Carrega o OFFSET da string em DX
+        LEA DX, ReadCollumMessage           ; Carrega o OFFSET da string em DX
         INT 21h                         ; Executa a impressão da string com OFFSER salvo em DX
         EntDec                          ; MACRO para entrada de número decimal
-        MOV DI, BL                      ; Salva a coluna a ser manipulada em DI
+        MOV DI, BX                      ; Salva a coluna a ser manipulada em DI
+        DEC DI                          ; De 1-10 para 0-9
 
         MOV AX, 10                      ; Salva o multiplicador em AX
         MUL SI                          ; AX*SI = DX:AX
         MOV SI, AX                      ; Passa resultado para SI
         MOV BX, [Matriz_Escolhida]      ; Salva o OFFSET da matriz escolhida em BX
-        CMP [BX][SI][DI], 0             ; Compara o conteúdo da posição escolhida com 0
+        ADD BX, SI                      ; OFFSET + Pos LInha = Pos Linha Real
+        CMP [BX][DI], 0                 ; Compara o conteúdo da posição escolhida com 0
         JE Erro                         ; Se Local escolhido for 0, usuário errou o tiro
         PulaLinha                       ; Se não, executa rotina de Impressão de acerto
         MOV AH, 9                       ; Função de impressão de string
         LEA DX, HitMessage              ; Salva o OFFSET da string em DX
         INT 21h                         ; Executa a impressão
-        MOV GamepadBase[SI][DI], 'X'           ; Muda a posição acertada para X
+        XCHG BX, SI                     ; Pos linha -> BX e salva conteúdo de BX em SI
+        MOV GamepadBase[BX][DI], 'X'    ; Muda a posição acertada para X
+        XCHG BX, SI                     ; Retorna os Conteúdos aos registradores de origem
         PulaLinha                       ; Macro para pular linha
         JMP EndProc                     ; Pula para o final do procedimento
         ERRO:
@@ -277,12 +301,14 @@ TITLE ProjetoFinal
             MOV AH, 9                       ; Função de impressão de string
             LEA DX, MissMessage             ; Carrega o OFFSET da string em DX
             INT 21h                         ; Executa a impressão
-            MOV GamepadBase[SI][DI], ' '    ; Muda a posição errada para spacebar
+            XCHG BX, SI                     ; Pos linha -> BX e salva conteúdo de BX em SI
+            MOV GamepadBase[BX][DI], ' '    ; Muda a posição errada para spacebar
+            XCHG BX, SI                     ; Retorna os Conteúdos aos registradores de origem
             PulaLinha                       ; Macro para pular linha
-
-        POP_ALL AX, BX, CX, DX          ; Devolve os valores dos registradores na pilha
-        POP DI
-        POP SI
+        EndProc:
+            POP_ALL AX, BX, CX, DX          ; Devolve os valores dos registradores na pilha
+            POP DI
+            POP SI
 
         RET                             ; Carrega o offset de retorno ao MAIN (que foi guardada na pilha)
     
