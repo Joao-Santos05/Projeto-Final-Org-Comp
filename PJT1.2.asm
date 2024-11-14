@@ -389,16 +389,28 @@ TITLE ProjetoFinal
         
         PUSH SI
         PUSH_ALL AX, BX, CX, DX
+        MOV BX, 1
+        MOV CX, 10
+        LEFT_TAB 2
+        Loop_Indice:
+            CALL SaiDec
+            INC BX
+            SPACE
+            LOOP Loop_Indice
 
-        ;FAZER SAIDEC PARA IMPRESSÃO DO INDICE
-
+        PulaLinha 1
         MOV AH, 2
         XOR CX, CX
         MOV CH, 10
         XOR BX, BX
+        MOV DL, 'A'
         Loop_linha:
             XOR SI, SI
             MOV CL, 10
+            INT 21h
+            LEFT_TAB 1
+            INC DL
+            PUSH DX
             Loop_coluna:
                 MOV DL, GamepadBase[BX][SI]
                 CMP DL, 20h
@@ -415,6 +427,7 @@ TITLE ProjetoFinal
             PulaLinha 1
             ADD BX, 10
             DEC CH
+            POP DX
             JNZ Loop_linha
 
         PulaLinha 2
@@ -477,4 +490,32 @@ TITLE ProjetoFinal
         RET                             ; Carrega o offset de retorno ao MAIN (que foi guardada na pilha)
     
     READ_ATTACK ENDP
+
+    SaiDec PROC NEAR
+        ; BX carrega o número a ser printado
+        PUSH_ALL AX, CX, DX, DI
+
+        MOV DI, 10
+        XOR CX, CX
+        MOV AX, BX          ;PASSA O NUMERO A SER DIVIDIDO PARA AX
+        XOR DX, DX          ;tira o lixo de dx
+        OUTPUTDECIMAL:
+            DIV DI              ;AX / DI    --> QUOCIENTE VAI PARA AX E RESTO VAI PARA DX
+            PUSH DX
+            XOR DX, DX
+            INC CX
+            OR AX, AX
+            JNZ OUTPUTDECIMAL
+        
+        MOV AH, 2
+        IMPRIMIRDECIMAL:
+            POP DX
+            OR DL, 30H
+            INT 21H
+            LOOP IMPRIMIRDECIMAL
+
+        POP_ALL AX, CX, DX, DI
+        RET
+
+    SaiDec ENDP
 END MAIN
