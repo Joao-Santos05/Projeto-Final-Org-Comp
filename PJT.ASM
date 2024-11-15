@@ -3,7 +3,7 @@ TITLE ProjetoFinal
 .STACK 100h
 .DATA
   ; Introdução:
-  INTRO_TITLE DB 'BATTLESHIP | OSC 2S24', '$' ; Criação/definição da variável "INTRO_TITLE" que contém o título da introdução.	
+  INTRO_TITLE DB 'BATTLESHIP | OSC 2024', '$' ; Criação/definição da variável "INTRO_TITLE" que contém o título da introdução.	
 
   ; Regras/Instruções:
     RULES_TITLE DB 'RULES/INSTRUCTIONS:', '$' ; Criação/definição da variável "RULES_TITLE" que contém o título das regras/instruções.
@@ -20,9 +20,9 @@ TITLE ProjetoFinal
     TENTH_RULE DB '> The game ends when you sink all the enemy ships.', '$'  ; Criação/definição da variável "TENTH_RULE" que contém a décima regra.
 
     CONFIRM_MESSAGE DB 'PRESS ANY BUTTON TO CONTINUE', '$' ; Criação/definição da variável "CONFIRM_MESSAGE" que contém a confirmação de leitura.
-    EndGameMessage DB 'THE END $'
-    ScoreMessage DB 'You sank $'
-    ScoreMessage2 DB '/19 positions $'
+    EndGameMessage DB 'THE END $' ; String para final do jogo
+    ScoreMessage DB 'You sank $'  ; String para o resultado
+    ScoreMessage2 DB '/19 positions $'  ;String para o resultado
 
     Matriz_Escolhida DW 0 ;-Armazena o offset da matriz escolhida-;
     VictoryParam DB 19 ; Variável para fim do jogo
@@ -166,6 +166,7 @@ TITLE ProjetoFinal
         INT 21H ; Conjunto de funções de entrada/saída.
     ENDM
 
+    ; Macro para printar espaço na tela
     SPACE MACRO
         PUSH AX
         PUSH DX
@@ -178,6 +179,7 @@ TITLE ProjetoFinal
         POP AX
     ENDM
 
+    ; Macro para entrada decimal
     EntDec MACRO
         LOCAL LoopScan
         LOCAL FimScan
@@ -206,7 +208,7 @@ TITLE ProjetoFinal
         POP AX
     ENDM
 
-    CLEAR_SCREEN MACRO ; Criação/definição do procedimento "CLEAR_SCREEN" para limpeza da tela.
+    CLEAR_SCREEN MACRO ; Criação/definição do macro "CLEAR_SCREEN" para limpeza da tela.
         PUSH AX
         
         MOV AX,03H ; Movimentação/cópia do valor 3 para AX (limpeza da tela).
@@ -402,52 +404,53 @@ TITLE ProjetoFinal
 
     ; Proc para printar a tabela para o usuário
     PrintGamepad PROC NEAR
-        
+        ; Salva os registradores na pilha
         PUSH SI
         PUSH_ALL AX, BX, CX, DX
-        MOV BX, 1
-        MOV CX, 10
-        LEFT_TAB 4
-        Loop_Indice:
-            CALL SaiDec
-            INC BX
-            SPACE
-            LOOP Loop_Indice
+        MOV BX, 1 ; Primeiro indice a ser impresso
+        MOV CX, 10  ; Repetições
+        LEFT_TAB 4  ; Macro para printar o Left Tab
+        Loop_Indice:    
+            CALL SaiDec ; Procedimento para o SaiDec
+            INC BX  ; Próximo indice
+            SPACE   ; Macro para printar espaço
+            LOOP Loop_Indice    ;Loopa até CX=0
 
-        PulaLinha 1
-        MOV AH, 2
-        XOR CX, CX
-        MOV CH, 10
-        XOR BX, BX
-        MOV DL, 'A'
+        PulaLinha 1 ; Macro para pular linha
+        MOV AH, 2   ; Função para imprimir um caractere
+        XOR CX, CX  ; Zera o contador
+        MOV CH, 10  ; Repetidor linha = 10
+        XOR BX, BX  ; Zera BX
+        MOV DL, 'A' ; Indice linha = A
         Loop_linha:
-            LEFT_TAB 2
-            XOR SI, SI
-            MOV CL, 10
-            INT 21h
-            LEFT_TAB 1
-            INC DL
-            PUSH DX
+            LEFT_TAB 2  ; Macro para o Left Tab
+            XOR SI, SI  ; Zera o indice da coluna
+            MOV CL, 10  ; Contador coluna = 10
+            INT 21h     ; Print do indice da linha 
+            LEFT_TAB 1  ; Left TAB
+            INC DL      ; Próximo indice
+            PUSH DX     ; Salva o indice na pilha
             Loop_coluna:
-                MOV DL, GamepadBase[BX][SI]
-                CMP DL, 20h
-                JE NotNumber
-                CMP DL, 'X'
-                JE NotNumber
-                OR DL, 30h
+                MOV DL, GamepadBase[BX][SI] ; Passa o conteudo da pos BX, SI para DL
+                CMP DL, 20h  ; CMP com o Spacebar
+                JE NotNumber ; Se igual, jump para 'NotNumber'
+                CMP DL, 'X'  ; CMP com o 'X'(posição acertada)
+                JE NotNumber ; Se igual, jump para 'NotNumber'
+                OR DL, 30h   ; Se for numero, transforma em caractere numerico
                 NotNumber:
-                    INT 21h
-                    SPACE
-                    INC SI
-                    DEC CL
-                    JNZ Loop_coluna
-            PulaLinha 1
-            ADD BX, 10
-            DEC CH
-            POP DX
-            JNZ Loop_linha
+                    INT 21h ; Imprime o caractere
+                    SPACE   ; Imprime o espaço
+                    INC SI  ; Próx coluna
+                    DEC CL  ; Contador - 1
+                    JNZ Loop_coluna ; Repete até CL=0
+            PulaLinha 1 ; Macro para pular linha
+            ADD BX, 10  ; Próx linha
+            POP DX  ; Indice de volta a DX
+            DEC CH  ; Contador - 1
+            JNZ Loop_linha  ;Loop enquanto CH não é 0
 
-        PulaLinha 2
+        PulaLinha 2 ;Macro para pular linha
+        ; Devolve os valores originais aos registradores
         POP_ALL AX, BX, CX, DX
         POP SI
 
@@ -466,7 +469,7 @@ TITLE ProjetoFinal
             INT 21h                         ; Executa a função e imprime a string com OFFSET salvo em DX
             MOV AH, 1                       ; Função de leitura de caractere
             INT 21h                         ; Executa a leitura
-            CMP AL, 30h
+            CMP AL, 30h                     ; Se AL =  '0', Pula para LerColuna (Condição de parada)
             JZ LerColuna
             CMP AL, 'A'
             JL ErrorLineMSG                 ; Se AL < 'A', não é uma letra válida
@@ -478,11 +481,11 @@ TITLE ProjetoFinal
             JG ErrorLineMSG                 ; Se AL > 'j', não é uma letra válida
             JMP MINUSCULA
         ErrorLineMsg:
-            PulaLinha 1
-            MOV AH, 9
-            LEA DX, PosInvalida
-            INT 21h
-            PulaLinha 2
+            PulaLinha 1 ; Pula linha
+            MOV AH, 9   ; Função de impressão de string
+            LEA DX, PosInvalida ; OFFSET da string em DX
+            INT 21h ; Executa a impressão
+            PulaLinha 2 ; Pula linha
             JMP LerLinha
         MAIUSCULA:
             SUB AL, 41h                     ; Converte Maiusculo para número
@@ -490,25 +493,26 @@ TITLE ProjetoFinal
         MINUSCULA:
             SUB AL, 61h                     ; Converte Minusculo para númeroS
         CONTINUA:
-            XOR AH, AH
+            XOR AH, AH                      ; Zera AH
             MOV SI, AX                      ; Salva a linha a ser manipulada em SI
         LerColuna:
             PulaLinha 2                     ; Macro para pular linha
-            MOV AH, 9
+            MOV AH, 9                       ; Função de impressão de string
             LEA DX, ReadCollumMessage       ; Carrega o OFFSET da string em DX
-            INT 21h                         ; Executa a impressão da string com OFFSER salvo em DX
+            INT 21h                         ; Executa a impressão da string com OFFSET salvo em DX
             EntDec                          ; MACRO para entrada de número decimal
-            OR BX, BX
+            OR BX, BX                       ; CMP BX com 0
             JZ EncerrarJogo
             CMP BX, 10
-            JG ErrorCollumMSG
+            JG ErrorCollumMSG               ; Verificador para ver se o numero é valido
             JMP SEGUE
         EncerrarJogo:
-            MOV DL, VictoryParam
+            MOV DL, VictoryParam            ; Salva o número de posições restantes em DL e Zera a variavel de parada
             XOR DH, DH
             MOV VictoryParam, 0
             JMP EndProc
         ErrorCollumMSG:
+            ; Label para imprimir erro na leitura da coluna
             PulaLinha 1
             MOV AH, 9
             LEA DX, PosInvalida
@@ -524,8 +528,8 @@ TITLE ProjetoFinal
         MOV SI, AX                      ; Passa resultado para SI
         MOV BX, [Matriz_Escolhida]      ; Salva o OFFSET da matriz escolhida em BX
         ADD BX, SI                      ; OFFSET + Pos LInha = Pos Linha Real
-        XCHG BX, SI
-        CMP GamepadBase[BX][DI], ' '
+        XCHG BX, SI                     
+        CMP GamepadBase[BX][DI], ' '    ; Cmp da posição escolhida com um espaço já atingido
         JE EspacoJaAtingido
         CMP GamepadBase[BX][DI], 'X'
         JE EspacoJaAtingido
@@ -597,10 +601,10 @@ TITLE ProjetoFinal
     FinalScreen PROC NEAR
         MOV AH, 9   ; Função responsável por imprimir uma string na tela.
 
-        PulaLinha 5 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        PulaLinha 5 ; Chamada da MACRO "PulaLinha" para quebra/inicialização de nova linha.
         LEFT_TAB 37 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
 
-        LEA DX, EndGameMessage  ; Carregamento do endereço da variável "INTRO_TITLE" em SI.
+        LEA DX, EndGameMessage  ; Carregamento do endereço da variável "EndGameMessage" em DX.
         INT 21H                 ; Conjunto de funções de entrada/saída.
 
         PulaLinha 1
