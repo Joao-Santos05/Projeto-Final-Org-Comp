@@ -22,8 +22,10 @@ TITLE ProjetoFinal
 
 
     Matriz_Escolhida DW 0 ;-Armazena o offset da matriz escolhida-;
-    ReadLineMessage DB "Write the number of the line you want to attack(1-10): $"
+    VictoryParam DB 19 ; Variável para fim do jogo
+    ReadLineMessage DB "Write the number of the line you want to attack(A-J): $"
     ReadCollumMessage DB "Write the number of the collum you want to attack(1-10): $"
+    PosInvalida DB "Invalid Position! Verify the index of the position you want to attack. $"
     HitMessage DB "Hit! $"
     MissMessage DB "Miss! $"
 
@@ -50,7 +52,6 @@ TITLE ProjetoFinal
              DB 0,0,0,0,0,1,0,0,0,0
              DB 0,0,0,0,0,0,0,0,1,0
              DB 0,1,1,0,0,0,0,0,1,0
-             DB 0,0,0,0,0,0,0,0,0,0
     
     GamepadB DB 1,0,0,0,0,0,0,1,1,0
              DB 1,0,0,0,1,0,0,0,0,0
@@ -62,10 +63,8 @@ TITLE ProjetoFinal
              DB 0,1,0,0,0,0,0,0,0,0
              DB 0,0,0,0,0,0,0,0,0,0
              DB 0,0,0,1,1,1,1,0,0,0
-             DB 0,0,0,0,0,0,0,0,0,0
 
     GamepadC DB 0,0,0,0,0,0,0,0,0,0
-             DB 0,0,0,0,0,0,0,0,0,0
              DB 0,1,0,0,0,0,0,0,0,0
              DB 0,1,0,0,0,0,0,1,0,0
              DB 0,0,0,0,0,0,1,1,1,0
@@ -74,15 +73,14 @@ TITLE ProjetoFinal
              DB 0,0,0,0,0,0,1,0,0,0
              DB 1,0,0,0,0,0,1,0,0,0
              DB 1,1,0,0,0,0,0,0,0,0
-             DB 1,0,0,1,1,1,1,0,0,0
+             DB 1,0,0,1,1,1,1,0,0,0 
     
     GamepadD DB 0,0,0,0,0,0,0,0,0,0
              DB 0,1,1,0,0,0,0,0,0,0
              DB 0,0,0,0,1,0,0,0,0,1
              DB 0,0,0,1,1,1,0,0,0,1
              DB 0,0,0,0,0,0,0,0,0,1
-             DB 0,0,0,0,0,0,0,0,0,1
-             DB 0,0,1,1,0,0,0,0,0,0
+             DB 0,0,1,1,0,0,0,0,0,1
              DB 0,0,0,0,0,0,0,0,0,0
              DB 0,0,0,1,0,0,0,0,0,0
              DB 0,0,0,1,0,0,0,1,0,0
@@ -136,32 +134,32 @@ TITLE ProjetoFinal
     ENDM ; Fim da MACRO.
 
     LEFT_TAB MACRO PARAM ; Criação de MACRO para impressão da tabulação das strings definidas no segmento de dados.
-    PUSH AX ; Salva o valor de AX na pilha.
-    PUSH BX ; Salva o valor de BX na pilha.
-    PUSH CX ; Salva o valor de CX na pilha.
-    PUSH DX ; Salva o valor de DX na pilha.
-            
-    MOV AH,3 ; Função responsável por obter a posição do cursor.
-    MOV BH,0 ; Movimentação/cópia do valor 0 para BH. 
-    INT 10H ; Conjunto de funções de vídeo.
-            
-    MOV AH,2 ; Função responsável por posicionar o cursor na tela.
-    ADD DL,PARAM ; Movimentação/cópia do valor de PARAM (parâmetro) para DL.
-    INT 10H ; Conjunto de funções de vídeo.
-            
-    POP DX ; Restaura o valor de DX da pilha.
-    POP CX ; Restaura o valor de CX da pilha.
-    POP BX ; Restaura o valor de BX da pilha.
-    POP AX ; Restaura o valor de AX da pilha.
+        PUSH AX ; Salva o valor de AX na pilha.
+        PUSH BX ; Salva o valor de BX na pilha.
+        PUSH CX ; Salva o valor de CX na pilha.
+        PUSH DX ; Salva o valor de DX na pilha.
+                
+        MOV AH,3 ; Função responsável por obter a posição do cursor.
+        MOV BH,0 ; Movimentação/cópia do valor 0 para BH. 
+        INT 10H ; Conjunto de funções de vídeo.
+                
+        MOV AH,2 ; Função responsável por posicionar o cursor na tela.
+        ADD DL,PARAM ; Movimentação/cópia do valor de PARAM (parâmetro) para DL.
+        INT 10H ; Conjunto de funções de vídeo.
+                
+        POP DX ; Restaura o valor de DX da pilha.
+        POP CX ; Restaura o valor de CX da pilha.
+        POP BX ; Restaura o valor de BX da pilha.
+        POP AX ; Restaura o valor de AX da pilha.
     ENDM ; Fim da MACRO.
 
     READ_CONFIRMATION MACRO ; Criação de MACRO para realizar a confirmação da leitura das instruções pelo jogador.
-    MOV AH,9 ; Função responsável por imprimir uma string na tela.
-    LEA DX,CONFIRM_MESSAGE ; Carregamento do endereço da variável "CONFIRM_MESSAGE" em SI.
-    INT 21H ; Conjunto de funções de entrada/saída.
+        MOV AH,9 ; Função responsável por imprimir uma string na tela.
+        LEA DX,CONFIRM_MESSAGE ; Carregamento do endereço da variável "CONFIRM_MESSAGE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
 
-    MOV AH,1 ; Função responsável por ler um caractere do teclado.
-    INT 21H ; Conjunto de funções de entrada/saída.
+        MOV AH,1 ; Função responsável por ler um caractere do teclado.
+        INT 21H ; Conjunto de funções de entrada/saída.
     ENDM
 
     SPACE MACRO
@@ -228,11 +226,18 @@ TITLE ProjetoFinal
         ; Procedimento para imprimir a gamepad base
         CALL PrintGamepad
         
-        ; Procedimento de leitura da jogada do usuário e atualização da gamepad base
-        CALL READ_ATTACK
+        GameLoop:
+            ; Procedimento de leitura da jogada do usuário e atualização da gamepad base
+            CALL READ_ATTACK
+            CMP VictoryParam, 0
+            JE Encerramento
+            PulaLinha 2
+            READ_CONFIRMATION
+            CALL CLEAR_SCREEN
 
-        CALL PrintGamepad
-    
+            CALL PrintGamepad
+            JMP GameLoop
+        Encerramento:
         ;-Fim de Código-;
         MOV AH, 4Ch ;-Aloca o valor '4ch' (função de terminação de programa) para AH, que é parte de AX-;
         INT 21h ;-Chama a função do DOS que usa o valor de AH para determinar qual operação realizar-;
@@ -391,7 +396,7 @@ TITLE ProjetoFinal
         PUSH_ALL AX, BX, CX, DX
         MOV BX, 1
         MOV CX, 10
-        LEFT_TAB 2
+        LEFT_TAB 4
         Loop_Indice:
             CALL SaiDec
             INC BX
@@ -405,6 +410,7 @@ TITLE ProjetoFinal
         XOR BX, BX
         MOV DL, 'A'
         Loop_linha:
+            LEFT_TAB 2
             XOR SI, SI
             MOV CL, 10
             INT 21h
@@ -444,18 +450,55 @@ TITLE ProjetoFinal
         PUSH DI
         PUSH_ALL AX, BX, CX, DX         ; Salva todos os registradores na pilha
 
-        MOV AH, 9                       ; Função de impressão de string
-        LEA DX, ReadLineMessage         ; Carrega o OFFSET da string em DX
-        INT 21h                         ; Executa a função e imprime a string com OFFSET salvo em DX
-        EntDec                          ; MACRO para entrada de número decimal
-        MOV SI, BX                      ; Salva a linha a ser manipulada em SI
-        DEC SI                          ; De 1-10 para 0-9
-        PulaLinha 1                     ; Macro para pular linha
-        LEA DX, ReadCollumMessage       ; Carrega o OFFSET da string em DX
-        INT 21h                         ; Executa a impressão da string com OFFSER salvo em DX
-        EntDec                          ; MACRO para entrada de número decimal
-        MOV DI, BX                      ; Salva a coluna a ser manipulada em DI
-        DEC DI                          ; De 1-10 para 0-9
+        LerLinha:
+            MOV AH, 9                       ; Função de impressão de string
+            LEA DX, ReadLineMessage         ; Carrega o OFFSET da string em DX
+            INT 21h                         ; Executa a função e imprime a string com OFFSET salvo em DX
+            MOV AH, 1                       ; Função de leitura de caractere
+            INT 21h                         ; Executa a leitura
+            CMP AL, 'A'
+            JL ErrorLineMSG                 ; Se AL < 'A', não é uma letra válida
+            CMP AL, 'J'
+            JLE MAIUSCULA                   ; Se AL <= 'J', é uma letra maiúscula válida
+            CMP AL, 'a'
+            JL ErrorLineMSG                 ; Se AL < 'a', não é uma letra válida
+            CMP AL, 'j'
+            JG ErrorLineMSG                 ; Se AL > 'j', não é uma letra válida
+            JMP MINUSCULA
+        ErrorLineMsg:
+            PulaLinha 1
+            MOV AH, 9
+            LEA DX, PosInvalida
+            INT 21h
+            PulaLinha 2
+            JMP LerLinha
+        MAIUSCULA:
+            SUB AL, 41h                     ; Converte Maiusculo para número
+            JMP CONTINUA
+        MINUSCULA:
+            SUB AL, 61h                     ; Converte Minusculo para númeroS
+        CONTINUA:
+            XOR AH, AH
+            MOV SI, AX                      ; Salva a linha a ser manipulada em SI
+        PulaLinha 2                         ; Macro para pular linha
+        LerColuna:
+            MOV AH, 9
+            LEA DX, ReadCollumMessage       ; Carrega o OFFSET da string em DX
+            INT 21h                         ; Executa a impressão da string com OFFSER salvo em DX
+            EntDec                          ; MACRO para entrada de número decimal
+            CMP BX, 10
+            JG ErrorCollumMSG
+            JMP SEGUE
+        ErrorCollumMSG:
+            PulaLinha 1
+            MOV AH, 9
+            LEA DX, PosInvalida
+            INT 21h
+            PulaLinha 2
+            JMP LerColuna
+        SEGUE:
+            MOV DI, BX                      ; Salva a coluna a ser manipulada em DI
+            DEC DI                          ; De 1-10 para 0-9
 
         MOV AX, 10                      ; Salva o multiplicador em AX
         MUL SI                          ; AX*SI = DX:AX
@@ -465,6 +508,7 @@ TITLE ProjetoFinal
         CMP BYTE PTR [BX][DI], 0        ; Compara o conteúdo da posição escolhida com 0
         JE Erro                         ; Se Local escolhido for 0, usuário errou o tiro
         PulaLinha 1                     ; Se não, executa rotina de Impressão de acerto
+        DEC VictoryParam
         MOV AH, 9                       ; Função de impressão de string
         LEA DX, HitMessage              ; Salva o OFFSET da string em DX
         INT 21h                         ; Executa a impressão
