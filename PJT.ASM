@@ -16,6 +16,7 @@ TITLE ProjetoFinal
     SEVENTH_RULE DB '> Vessels/ships cannot be docked:', '$'  ; Criação/definição da variável "SEVENTH_RULE" que contém a sétima regra.
     EIGHTH_RULE DB '   * There is a minimum distance of 1 square on every direction.', '$'  ; Criação/definição da variável "EIGHTH_RULE" que contém a oitava regra.
     NINTH_RULE DB '> You can try as many times as you want.', '$'  ; Criação/definição da variável "NINTH_RULE" que contém a nona regra.
+    NINTH_RULE2 DB '   * You can stop the round by typing 0, 0 and Enter.', '$'
     TENTH_RULE DB '> The game ends when you sink all the enemy ships.', '$'  ; Criação/definição da variável "TENTH_RULE" que contém a décima regra.
 
     CONFIRM_MESSAGE DB 'PRESS ANY BUTTON TO CONTINUE', '$' ; Criação/definição da variável "CONFIRM_MESSAGE" que contém a confirmação de leitura.
@@ -224,17 +225,14 @@ TITLE ProjetoFinal
 
         ; Procedimento para escolher gamepad aleatório
         CALL EscolherGamepadAleatorio ;Retorna para o OFFSET do gamepad escolhido para a variavel 'Matriz_Escolhida'
-            
-        ;----------------------------;
-        ;-PARTE GRÁFICA DO BIG PETER-;
-        ;----------------------------;
-        CLEAR_SCREEN
+        
+        CLEAR_SCREEN                  ;Macro para limpar tela
 
-        CALL INTRODUCTION_SCREEN
+        CALL INTRODUCTION_SCREEN      ;Função gráfica para introdução
 
-        READ_CONFIRMATION
+        READ_CONFIRMATION             ;Macro para aguardar ação do usuário
 
-        CLEAR_SCREEN
+        CLEAR_SCREEN                  ;Macro para limpar tela
         
         ; Procedimento para imprimir a gamepad base
         CALL PrintGamepad
@@ -242,21 +240,18 @@ TITLE ProjetoFinal
         GameLoop:
             ; Procedimento de leitura da jogada do usuário e atualização da gamepad base
             CALL READ_ATTACK
-            CMP VictoryParam, 0
-            JE Encerramento
-            PulaLinha 2
-            READ_CONFIRMATION
-            CLEAR_SCREEN
+            CMP VictoryParam, 0       ;Compara quantas posições restam a acertar
+            JE Encerramento           ;Se não restar nenhuma, Pula para o encerramento
+            PulaLinha 2               ;Macro para pular linha
+            READ_CONFIRMATION         ;Macro para aguardar ação do usuário
+            CLEAR_SCREEN              ;Macro para limpar tela
 
-            CALL PrintGamepad
-            JMP GameLoop
+            CALL PrintGamepad         ; Procedimento oara imprimir a gamepad base
+            JMP GameLoop              ; 
         Encerramento:
-        MOV VictoryParam, DL
+        MOV VictoryParam, DL          ;
 
         CLEAR_SCREEN
-        ;----------------------;
-        ;-Tela de encerramento-;
-        ;----------------------;
         CALL FinalScreen
         
         ;-Fim de Código-;
@@ -317,10 +312,6 @@ TITLE ProjetoFinal
         
         RET                             ; Carrega o Endereço de retorno à MAIN salvo na pilha
     EscolherGamepadAleatorio ENDP
-    
-    ;----------------------------;
-    ;-PARTE GRÁFICA DO BIG PETER-;
-    ;----------------------------;
 
     INTRODUCTION_SCREEN PROC NEAR; Criação/definição do procedimento "INTRODUCTION_SCREEN" para exibição da tela de introdução.
         MOV AH,9 ; Função responsável por imprimir uma string na tela.
@@ -389,6 +380,12 @@ TITLE ProjetoFinal
         LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
 
         LEA DX,NINTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,NINTH_RULE2 ; Carregamento do endereço da variável "SECOND_RULE" em SI.
         INT 21H ; Conjunto de funções de entrada/saída.
 
         PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
@@ -601,10 +598,21 @@ TITLE ProjetoFinal
         MOV AH, 9   ; Função responsável por imprimir uma string na tela.
 
         PulaLinha 5 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
-        LEFT_TAB 25 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+        LEFT_TAB 37 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
 
-        LEA DX,EndGameMessage ; Carregamento do endereço da variável "INTRO_TITLE" em SI.
-        INT 21H               ; Conjunto de funções de entrada/saída.
+        LEA DX, EndGameMessage  ; Carregamento do endereço da variável "INTRO_TITLE" em SI.
+        INT 21H                 ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1
+        LEFT_TAB 29
+        LEA DX, ScoreMessage
+        INT 21h
+        MOV CL, VictoryParam
+        MOV BL, 19
+        SUB BL, CL
+        CALL SaiDec
+        LEA DX, ScoreMessage2
+        INT 21h
 
         RET
     FinalScreen ENDP
