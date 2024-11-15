@@ -19,7 +19,6 @@ TITLE ProjetoFinal
     TENTH_RULE DB '> The game ends when you sink all the enemy ships.', '$'  ; Criação/definição da variável "TENTH_RULE" que contém a décima regra.
 
     CONFIRM_MESSAGE DB 'PRESS ANY BUTTON TO CONTINUE', '$' ; Criação/definição da variável "CONFIRM_MESSAGE" que contém a confirmação de leitura.
-
     EndGameMessage DB 'THE END $'
     ScoreMessage DB 'You sank $'
     ScoreMessage2 DB '/19 positions $'
@@ -204,20 +203,18 @@ TITLE ProjetoFinal
 
         POP CX
         POP AX
-        INT 21H ; Conjunto de funções de entrada/saída.
-
-        POP CX
-        POP AX
     ENDM
 
     CLEAR_SCREEN MACRO ; Criação/definição do procedimento "CLEAR_SCREEN" para limpeza da tela.
         PUSH AX
-
+        
         MOV AX,03H ; Movimentação/cópia do valor 3 para AX (limpeza da tela).
-        INT 10H ; Conjunto de funções de vídeo.Inicia a Sessão Code-;
-
+        INT 10H ; Conjunto de funções de vídeo.
+        
         POP AX
+        
     ENDM
+.CODE ;-Inicia a Sessão Code-;
 
     MAIN PROC ;-Inicia a Sessão Main-;
         
@@ -227,7 +224,10 @@ TITLE ProjetoFinal
 
         ; Procedimento para escolher gamepad aleatório
         CALL EscolherGamepadAleatorio ;Retorna para o OFFSET do gamepad escolhido para a variavel 'Matriz_Escolhida'
-        
+            
+        ;----------------------------;
+        ;-PARTE GRÁFICA DO BIG PETER-;
+        ;----------------------------;
         CLEAR_SCREEN
 
         CALL INTRODUCTION_SCREEN
@@ -252,13 +252,13 @@ TITLE ProjetoFinal
             JMP GameLoop
         Encerramento:
         MOV VictoryParam, DL
-        
+
+        CLEAR_SCREEN
         ;----------------------;
         ;-Tela de encerramento-;
         ;----------------------;
-        CLEAR_SCREEN
+        CALL FinalScreen
         
-
         ;-Fim de Código-;
         MOV AH, 4Ch ;-Aloca o valor '4ch' (função de terminação de programa) para AH, que é parte de AX-;
         INT 21h ;-Chama a função do DOS que usa o valor de AH para determinar qual operação realizar-;
@@ -317,6 +317,10 @@ TITLE ProjetoFinal
         
         RET                             ; Carrega o Endereço de retorno à MAIN salvo na pilha
     EscolherGamepadAleatorio ENDP
+    
+    ;----------------------------;
+    ;-PARTE GRÁFICA DO BIG PETER-;
+    ;----------------------------;
 
     INTRODUCTION_SCREEN PROC NEAR; Criação/definição do procedimento "INTRODUCTION_SCREEN" para exibição da tela de introdução.
         MOV AH,9 ; Função responsável por imprimir uma string na tela.
@@ -338,34 +342,42 @@ TITLE ProjetoFinal
 
         LEA DX,FIRST_RULE ; Carregamento do endereço da variável "FIRST_RULE" em SI.
         INT 21H ; Conjunto de funções de entrada/saída.
-        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.        
-        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.        
-        LEA DX,SECOND_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.        
-        INT 21H ; Conjunto de funções de entrada/saída.        
-        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.        
-        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.        
-        LEA DX,THIRD_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.        
-        INT 21H ; Conjunto de funções de entrada/saída.        
-        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.        
-        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.        
-        LEA DX,FOURTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.        
-        INT 21H ; Conjunto de funções de entrada/saída.        
-        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.        
-        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.        
-        LEA DX,FIFTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.        
-        INT 21H ; Conjunto de funções de entrada/saída.        
-        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.        
-        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.        
-        LEA DX,SIXTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.        
-        
 
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
 
+        LEA DX,SECOND_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
 
-        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.    CLEAR_SCREEN ENDP ; Fim do procedimento "CLEAR_SCREEN".
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,THIRD_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,FOURTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,FIFTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,SIXTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
+        INT 21H ; Conjunto de funções de entrada/saída.
+
+        PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
         LEA DX,SEVENTH_RULE ; Carregamento do endereço da variável "SECOND_RULE" em SI.
-
-        
-                INT 21H ; Conjunto de funções de entrada/saída.
+        INT 21H ; Conjunto de funções de entrada/saída.
 
         PulaLinha 1 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
         LEFT_TAB 2 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
@@ -390,7 +402,6 @@ TITLE ProjetoFinal
 
         RET ; Retorno do procedimento.
     INTRODUCTION_SCREEN ENDP ; Fim do procedimento "INTRODUCTION_SCREEN".
-
 
     ; Proc para printar a tabela para o usuário
     PrintGamepad PROC NEAR
@@ -586,7 +597,15 @@ TITLE ProjetoFinal
 
     SaiDec ENDP
 
-    FinalScreen PROC
-        
+    FinalScreen PROC NEAR
+        MOV AH, 9   ; Função responsável por imprimir uma string na tela.
+
+        PulaLinha 5 ; Chamada da MACRO "NEW_LINE" para quebra/inicialização de nova linha.
+        LEFT_TAB 25 ; Chamada da MACRO "LEFT_TAB" para tabulação das strings definidas no segmento de dados.
+
+        LEA DX,EndGameMessage ; Carregamento do endereço da variável "INTRO_TITLE" em SI.
+        INT 21H               ; Conjunto de funções de entrada/saída.
+
+        RET
     FinalScreen ENDP
 END MAIN
