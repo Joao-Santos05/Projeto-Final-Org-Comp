@@ -26,6 +26,7 @@ TITLE ProjetoFinal
     ReadLineMessage DB "Write the number of the line you want to attack(A-J): $"
     ReadCollumMessage DB "Write the number of the collum you want to attack(1-10): $"
     PosInvalida DB "Invalid Position! Verify the index of the position you want to attack. $"
+    PosAtingida DB "You have already used this position, try again. $"
     HitMessage DB "Hit! $"
     MissMessage DB "Miss! $"
 
@@ -238,6 +239,11 @@ TITLE ProjetoFinal
             CALL PrintGamepad
             JMP GameLoop
         Encerramento:
+        MOV VictoryParam, DX
+        ;----------------------;
+        ;-Tela de encerramento-;
+        ;----------------------;
+        
         ;-Fim de Código-;
         MOV AH, 4Ch ;-Aloca o valor '4ch' (função de terminação de programa) para AH, que é parte de AX-;
         INT 21h ;-Chama a função do DOS que usa o valor de AH para determinar qual operação realizar-;
@@ -447,8 +453,7 @@ TITLE ProjetoFinal
     READ_ATTACK PROC NEAR
 
         PUSH SI
-        PUSH DI
-        PUSH_ALL AX, BX, CX, DX         ; Salva todos os registradores na pilha
+        PUSH_ALL AX, BX, CX, DI         ; Salva todos os registradores na pilha
 
         LerLinha:
             MOV AH, 9                       ; Função de impressão de string
@@ -456,6 +461,8 @@ TITLE ProjetoFinal
             INT 21h                         ; Executa a função e imprime a string com OFFSET salvo em DX
             MOV AH, 1                       ; Função de leitura de caractere
             INT 21h                         ; Executa a leitura
+            CMP AL, 30h
+            JZ LerColuna
             CMP AL, 'A'
             JL ErrorLineMSG                 ; Se AL < 'A', não é uma letra válida
             CMP AL, 'J'
@@ -480,15 +487,22 @@ TITLE ProjetoFinal
         CONTINUA:
             XOR AH, AH
             MOV SI, AX                      ; Salva a linha a ser manipulada em SI
-        PulaLinha 2                         ; Macro para pular linha
         LerColuna:
+            PulaLinha 2                     ; Macro para pular linha
             MOV AH, 9
             LEA DX, ReadCollumMessage       ; Carrega o OFFSET da string em DX
             INT 21h                         ; Executa a impressão da string com OFFSER salvo em DX
             EntDec                          ; MACRO para entrada de número decimal
+            OR BX, BX
+            JZ EncerrarJogo
             CMP BX, 10
             JG ErrorCollumMSG
             JMP SEGUE
+        EncerrarJogo:
+            MOV DL, VictoryParam
+            XOR DH, DH
+            MOV VictoryParam, 0
+            JMP EndProc
         ErrorCollumMSG:
             PulaLinha 1
             MOV AH, 9
@@ -505,6 +519,10 @@ TITLE ProjetoFinal
         MOV SI, AX                      ; Passa resultado para SI
         MOV BX, [Matriz_Escolhida]      ; Salva o OFFSET da matriz escolhida em BX
         ADD BX, SI                      ; OFFSET + Pos LInha = Pos Linha Real
+        XCHG BX, SI
+        CMP GamepadBase[BX][DI], ' '
+        JE EspacoJaAtingido
+        XCHG BX, SI
         CMP BYTE PTR [BX][DI], 0        ; Compara o conteúdo da posição escolhida com 0
         JE Erro                         ; Se Local escolhido for 0, usuário errou o tiro
         PulaLinha 1                     ; Se não, executa rotina de Impressão de acerto
@@ -517,6 +535,13 @@ TITLE ProjetoFinal
         XCHG BX, SI                     ; Retorna os Conteúdos aos registradores de origem
         PulaLinha 2                     ; Macro para pular linha
         JMP EndProc                     ; Pula para o final do procedimento
+        EspacoJaAtingido:
+            PulaLinha 1
+            MOV AH, 9
+            LEA DX, PosAtingida
+            INT 21h
+            PulaLinha 2
+            JMP EndProc
         ERRO:
             PulaLinha 1                     ; Macro para pular linha
             MOV AH, 9                       ; Função de impressão de string
@@ -527,8 +552,7 @@ TITLE ProjetoFinal
             XCHG BX, SI                     ; Retorna os Conteúdos aos registradores de origem
             PulaLinha 2                     ; Macro para pular linha
         EndProc:
-            POP_ALL AX, BX, CX, DX          ; Devolve os valores dos registradores na pilha
-            POP DI
+            POP_ALL AX, BX, CX, DI          ; Devolve os valores dos registradores na pilha
             POP SI
 
         RET                             ; Carrega o offset de retorno ao MAIN (que foi guardada na pilha)
